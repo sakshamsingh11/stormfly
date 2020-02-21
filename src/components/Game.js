@@ -3,7 +3,8 @@ import { Engine } from '@babylonjs/core/Engines/engine'
 import { Scene } from '@babylonjs/core/scene'
 import { DebugLayer } from '@babylonjs/core/Debug/debugLayer'
 import { Vector3, Color3, Axis } from '@babylonjs/core/Maths/math'
-import { FreeCamera } from '@babylonjs/core/Cameras/freeCamera'
+import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera'
+import { TargetCamera } from '@babylonjs/core/Cameras/targetCamera'
 import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
@@ -54,7 +55,7 @@ class Game {
   }
 
   initializeCamera (canvas) {
-    this.camera = new FreeCamera('camera1', new Vector3(0, 6, -5), this.scene)
+    this.camera = new TargetCamera('camera1', new Vector3(0, 10, -10), this.scene)
     this.camera.setTarget(Vector3.Zero()) // target camera towards scene origin
     this.camera.attachControl(canvas, true) // attach camera to canvas
   }
@@ -91,7 +92,7 @@ class Game {
     cube2.showBoundingBox = true
 
     // ground with slight tilt; indicative of real world terrain
-    const ground = Mesh.CreateGround('ground1', 16, 16, 50) // Params: name, width, depth, subdivs, scene
+    const ground = Mesh.CreateGround('ground1', 160, 160, 50) // Params: name, width, depth, subdivs, scene
     ground.material = material
     ground.enableEdgesRendering(10)
     ground.rotate(Axis.X, Math.PI / 180)
@@ -111,7 +112,7 @@ class Game {
   }
 
   subscribeToMessages () {
-    const messages = ['PLAYER_LOADED']
+    const messages = ['PLAYER_LOADED', 'PLAYER_MOVED']
     messages.forEach(message => { Messenger.subscribe(message, data => this.listenToMessages(message, data)) })
   }
 
@@ -119,6 +120,12 @@ class Game {
     switch (message) {
       case 'PLAYER_LOADED': {
         console.log('player model has loaded...', data)
+        break
+      }
+      case 'PLAYER_MOVED': {
+        // console.log("moving - ", data)
+        const camPos = this.camera.position
+        this.camera.position = new Vector3(camPos.x + data.x, camPos.y, camPos.z + data.z)
         break
       }
     }
