@@ -6,6 +6,7 @@ import { Vector3, Color3, Axis } from '@babylonjs/core/Maths/math'
 import { UniversalCamera } from '@babylonjs/core/Cameras/universalCamera'
 import { TargetCamera } from '@babylonjs/core/Cameras/targetCamera'
 import { DirectionalLight } from '@babylonjs/core/Lights/directionalLight'
+import { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGenerator'
 import { Mesh } from '@babylonjs/core/Meshes/mesh'
 import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial'
 // import { PhysicsImpostor } from '@babylonjs/core/Physics/physicsImpostor'
@@ -55,51 +56,57 @@ class Game {
   }
 
   initializeCamera (canvas) {
-    this.camera = new TargetCamera('camera1', new Vector3(0, 10, -10), this.scene)
+    this.camera = new TargetCamera('camera1', new Vector3(0, 30, -10), this.scene)
     this.camera.setTarget(Vector3.Zero()) // target camera towards scene origin
     this.camera.attachControl(canvas, true) // attach camera to canvas
   }
 
   initializeLights () {
     const light = new DirectionalLight('light1', new Vector3(0.5, -0.9, 1), this.scene)
-    light.intensity = 1.5
+    light.intensity = 2
+    light.position = new Vector3(-100,2,0)
     window.light = light // NOTE: make light a global object; temporary
+    window.shadowGenerator = new ShadowGenerator(128, light); // to generate shadows. made global temporarily
+    window.shadowGenerator.useBlurExponentialShadowMap = true;
+    window.shadowGenerator.frustumEdgeFalloff = 0;
+    console.log(window.shadowGenerator.getShadowMap().renderList)
   }
 
   initializeBasicAssets () {
     const material = new StandardMaterial()
     material.name = 'My custom material'
-    material.diffuseColor = new Color3(1, 0.9, 0.7)
+    material.diffuseColor = new Color3(6/256, 3/256, 44/256)
     material.specularColor = new Color3(0, 0, 0)
 
-    // center of map
-    Mesh.CreateSphere('center', 3, 0.1)
+    // // center of map
+    // // Mesh.CreateSphere('center', 3, 0.1)
 
-    // cube1 will trigger collided flag
-    const cube1 = Mesh.CreateBox('cube1')
-    cube1.name = 'Entry point'
-    cube1.position = new Vector3(0, 0.5, -2)
-    cube1.material = material
-    cube1.enableEdgesRendering(10)
+    // // cube1 will trigger collided flag
+    // const cube1 = Mesh.CreateBox('cube1')
+    // cube1.name = 'Entry point'
+    // cube1.position = new Vector3(0, 0.5, -2)
+    // cube1.material = material
+    // cube1.enableEdgesRendering(10)
 
-    // player cannot walk through cube2
-    const cube2 = Mesh.CreateBox('cube2') // Params: name, subdivs, size (diameter), scene
-    cube2.material = material
-    cube2.position = new Vector3(0, 0.5, 3)
-    cube2.renderOutline = true
-    cube2.checkCollisions = true
-    cube2.rotation.y = Math.PI / 4
-    cube2.showBoundingBox = true
+    // // player cannot walk through cube2
+    // const cube2 = Mesh.CreateBox('cube2') // Params: name, subdivs, size (diameter), scene
+    // cube2.material = material
+    // cube2.position = new Vector3(0, 0.5, 3)
+    // cube2.renderOutline = true
+    // cube2.checkCollisions = true
+    // cube2.rotation.y = Math.PI / 4
+    // cube2.showBoundingBox = true
 
     // ground with slight tilt; indicative of real world terrain
     const ground = Mesh.CreateGround('ground1', 160, 160, 50) // Params: name, width, depth, subdivs, scene
     ground.material = material
-    ground.enableEdgesRendering(10)
-    ground.rotate(Axis.X, Math.PI / 180)
+    // ground.enableEdgesRendering(10)
+    // ground.rotate(Axis.X, Math.PI / 180)
     ground.checkCollisions = true // don't allow player to walk through
     // ground.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, this.scene) // 0 mass makes object immovable
-
-    return [cube1, cube2, ground]
+    ground.receiveShadows = true
+    // return [cube1, cube2, ground]
+    return [ground]
   }
 
   addPlayers (canvas, colliders) {
@@ -108,7 +115,7 @@ class Game {
 
   addMoreAssets () {
     SceneAssets.addDemoTrees(this.scene)
-    SceneAssets.addLegoModel(this.scene)
+    // SceneAssets.addLegoModel(this.scene)
   }
 
   subscribeToMessages () {
@@ -120,6 +127,7 @@ class Game {
     switch (message) {
       case 'PLAYER_LOADED': {
         console.log('player model has loaded...', data)
+        window.shadowGenerator.addShadowCaster(data);
         break
       }
       case 'PLAYER_MOVED': {

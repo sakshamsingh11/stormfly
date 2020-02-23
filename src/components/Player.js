@@ -208,10 +208,12 @@ class Player {
 
   movePlayer () {
     const vector = new Vector3(this.dirX, 0, this.dirY).normalize()
+    const initial = new Vector3(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z)
     const moveVector = new Vector3(vector.x * WALK_SPEED_FACTOR, GRAVITY_FACTOR * WALK_SPEED_FACTOR, vector.z * WALK_SPEED_FACTOR)
     this.mesh.moveWithCollisions(moveVector)
     this.mesh.rotation = new Vector3(0, Math.atan2(this.dirY, -this.dirX) + Math.PI / 2, 0)
-    Messenger.publish('PLAYER_MOVED', moveVector)
+    const final = this.mesh.position
+    Messenger.publish('PLAYER_MOVED', new Vector3(final.x - initial.x, final.y - initial.y, final.z - initial.z))
   }
 }
 
