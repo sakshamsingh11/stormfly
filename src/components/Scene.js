@@ -4,14 +4,18 @@ import { VertexData } from '@babylonjs/core/Meshes/mesh.vertexData'
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader'
 import { Vector3, Matrix, Axis } from '@babylonjs/core/Maths/math'
 
-const total = 3
+import AssetLoader from 'utilities/AssetLoader'
+
+const total = 9
 let counter = 0 // to keep track of number of trees loaded
+let ctr = 0
 
 class Scene {
   // set basic info
   static initialize (scene, camera) {
     this.scene = scene
     this.camera = camera
+    this.assetLoader = new AssetLoader()
 
     this.gameObjects = {
       trees: [],
@@ -75,6 +79,58 @@ class Scene {
     const assets = {
       trees: new Array(total / 3).fill(['TreePine1.glb', 'TreePine2.glb', 'TreePine3.glb']).flat()
     }
+    const onAssetLoad = (meshes, index) => {
+      // TODO: found more efficient way to compute bounding box of imported mesh; or create a helper function
+      const rowCount = 17
+      const boundingBox = {
+        max: {},
+        min: {},
+        scale: {},
+        center: {}
+      }
+
+      // TODO: find a better way of assigning parent to an imported model
+      meshes.forEach((mesh, subindex) => {
+        window.shadowGenerator.addShadowCaster(mesh)
+        mesh.setParent(this.gameObjects.trees[index])
+        // mesh.showBoundingBox = true
+
+        const meshBoundingBox = mesh.getBoundingInfo().boundingBox
+        const a = ['x', 'y', 'z']
+        const b = ['max', 'min']
+        a.forEach(xyz => {
+          b.forEach(minmax => {
+            const c = minmax === 'min' ? 'minimumWorld' : 'maximumWorld'
+            boundingBox[minmax][xyz] = boundingBox[minmax][xyz] === undefined ? meshBoundingBox[c][xyz] : Math[minmax](meshBoundingBox[c][xyz], boundingBox[minmax][xyz])
+            xyz === 'y' && console.log('meshBoundingBox[c][xyz]', meshBoundingBox.maximumWorld.y)
+          })
+          boundingBox.scale[xyz] = boundingBox.max[xyz] - boundingBox.min[xyz]
+          boundingBox.center[xyz] = (boundingBox.max[xyz] + boundingBox.min[xyz]) / 2
+        })
+      })
+
+      // create a box collider for the final bounding box; add collisions; make it translucent (for debugging)
+      // const colliderMesh = Mesh.CreateBox(`tree-collider-${index}`)
+      // colliderMesh.scaling = new Vector3(boundingBox.scale.x, boundingBox.scale.y, boundingBox.scale.z)
+      // colliderMesh.position = new Vector3(boundingBox.center.x, boundingBox.center.y, boundingBox.center.z)
+      // colliderMesh.setParent(this.gameObjects.trees[index])
+      // colliderMesh.checkCollisions = true
+      // colliderMesh.visibility = 0
+
+      this.gameObjects.trees[index].position.x = -Math.floor(index % (rowCount)) * 7
+      this.gameObjects.trees[index].position.z = -Math.floor(index / (rowCount)) * 7
+
+      this.gameObjects.trees[index].scaling = new Vector3(0.3, 0.3, 0.3)
+
+      this.gameObjects.trees[index].data = {
+        rotationFactor: Math.random() * (index % 2 === 0 ? 1 : -1) // alternate clockwise & anti-clockwise rotations; randomize rotation speed
+      }
+
+      counter++
+      if (counter === total) {
+        console.info(`All ${total} trees have been loaded. Starting animation...`)
+      }
+    }
 
     console.info(`Loading ${total} trees...`)
 
@@ -83,79 +139,35 @@ class Scene {
       this.gameObjects.trees.push(treeGO)
     })
 
-    const rowCount = 17
     assets.trees.forEach((tree, index) => {
-      SceneLoader.ImportMeshAsync(
-        null,
-        'assets/models/',
-        tree,
-        scene
-      ).then(({ meshes }) => {
-        // TODO: found more efficient way to compute bounding box of imported mesh; or create a helper function
-        const boundingBox = {
-          max: {},
-          min: {},
-          scale: {},
-          center: {}
-        }
-
-        // TODO: find a better way of assigning parent to an imported model
-        meshes.forEach((mesh, subindex) => {
-          window.shadowGenerator.addShadowCaster(mesh)
-          mesh.setParent(this.gameObjects.trees[index])
-          // mesh.showBoundingBox = true
-
-          const meshBoundingBox = mesh.getBoundingInfo().boundingBox
-          const a = ['x', 'y', 'z']
-          const b = ['max', 'min']
-          a.forEach(xyz => {
-            b.forEach(minmax => {
-              const c = minmax === 'min' ? 'minimumWorld' : 'maximumWorld'
-              boundingBox[minmax][xyz] = boundingBox[minmax][xyz] === undefined ? meshBoundingBox[c][xyz] : Math[minmax](meshBoundingBox[c][xyz], boundingBox[minmax][xyz])
-              xyz === 'y' && console.log('meshBoundingBox[c][xyz]', meshBoundingBox.maximumWorld.y)
-            })
-            boundingBox.scale[xyz] = boundingBox.max[xyz] - boundingBox.min[xyz]
-            boundingBox.center[xyz] = (boundingBox.max[xyz] + boundingBox.min[xyz]) / 2
-          })
-        })
-
-        // create a box collider for the final bounding box; add collisions; make it translucent (for debugging)
-        const colliderMesh = Mesh.CreateBox(`tree-collider-${index}`)
-        colliderMesh.scaling = new Vector3(boundingBox.scale.x, boundingBox.scale.y, boundingBox.scale.z)
-        colliderMesh.position = new Vector3(boundingBox.center.x, boundingBox.center.y, boundingBox.center.z)
-        colliderMesh.setParent(this.gameObjects.trees[index])
-        colliderMesh.checkCollisions = true
-        colliderMesh.visibility = 0
-
-        this.gameObjects.trees[index].position.x = -Math.floor(index % (rowCount)) * 7
-        this.gameObjects.trees[index].position.z = -Math.floor(index / (rowCount)) * 7
-
-        this.gameObjects.trees[index].scaling = new Vector3(0.3, 0.3, 0.3)
-
-        this.gameObjects.trees[index].data = {
-          rotationFactor: Math.random() * (index % 2 === 0 ? 1 : -1) // alternate clockwise & anti-clockwise rotations; randomize rotation speed
-        }
-
-        counter++
-        if (counter === total) {
-          console.info(`All ${total} trees have been loaded. Starting animation...`)
-        }
+      console.log(onAssetLoad)
+      this.assetLoader.addToQueue({
+        url: 'assets/models/',
+        name: tree,
+        scene,
+        index,
+        onLoad: onAssetLoad
       })
     })
   }
 
   // rotate demo trees
   static update () {
+    ctr++
+    if (ctr === 10) {
+      this.assetLoader.updateRunningQueue()
+      ctr = 0
+    }
     // exit unless all trees have been loaded
-    // if (counter !== total) {
-    //   return
-    // }
+    if (counter !== total) {
+      return
+    }
 
-    // this.gameObjects.trees.forEach((tree, index) => {
-    //   tree.data && tree.rotate(Axis.Y, tree.data.rotationFactor * Math.PI / 150)
-    // })
+    this.gameObjects.trees.forEach((tree, index) => {
+      tree.data && tree.rotate(Axis.Y, tree.data.rotationFactor * Math.PI / 150)
+    })
 
-    // this.gameObjects.lego && this.gameObjects.lego.rotate(Axis.Y, Math.PI / 150)
+    this.gameObjects.lego && this.gameObjects.lego.rotate(Axis.Y, Math.PI / 150)
   }
 }
 

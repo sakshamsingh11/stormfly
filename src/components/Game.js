@@ -42,9 +42,11 @@ class Game {
     self.initializeCamera(canvas)
     self.initializeScene()
     self.initializeLights()
-    const basicAssets = self.initializeBasicAssets()
     self.addPlayers(canvas, basicAssets)
-    self.addMoreAssets()
+    const basicAssets = self.initializeBasicAssets()
+    setTimeout(() => {
+      self.addMoreAssets()
+    }, 5000)
     self.subscribeToMessages()
     self.update(engine)
   }
@@ -64,18 +66,18 @@ class Game {
   initializeLights () {
     const light = new DirectionalLight('light1', new Vector3(0.5, -0.9, 1), this.scene)
     light.intensity = 2
-    light.position = new Vector3(-100,2,0)
+    light.position = new Vector3(-100, 2, 0)
     window.light = light // NOTE: make light a global object; temporary
-    window.shadowGenerator = new ShadowGenerator(128, light); // to generate shadows. made global temporarily
-    window.shadowGenerator.useBlurExponentialShadowMap = true;
-    window.shadowGenerator.frustumEdgeFalloff = 0;
+    window.shadowGenerator = new ShadowGenerator(128, light) // to generate shadows. made global temporarily
+    window.shadowGenerator.useBlurExponentialShadowMap = true
+    window.shadowGenerator.frustumEdgeFalloff = 0
     console.log(window.shadowGenerator.getShadowMap().renderList)
   }
 
   initializeBasicAssets () {
     const material = new StandardMaterial()
     material.name = 'My custom material'
-    material.diffuseColor = new Color3(6/256, 3/256, 44/256)
+    material.diffuseColor = new Color3(6 / 256, 3 / 256, 44 / 256)
     material.specularColor = new Color3(0, 0, 0)
 
     // // center of map
@@ -127,7 +129,7 @@ class Game {
     switch (message) {
       case 'PLAYER_LOADED': {
         console.log('player model has loaded...', data)
-        window.shadowGenerator.addShadowCaster(data);
+        window.shadowGenerator.addShadowCaster(data)
         break
       }
       case 'PLAYER_MOVED': {
