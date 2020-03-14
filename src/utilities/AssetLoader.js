@@ -1,9 +1,9 @@
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader'
-import Worker from 'utilities/Worker'
-import WebWorker from 'utilities/WorkerSetup'
+// import WebWorker from 'utilities/WorkerSetup'
 import Messenger from 'components/Messenger'
-let delayed = false
 
+let delayed = false
+const MyWorker = require('worker-loader!./Worker.js')
 class AssetLoader {
   getBrowserName () {
     const userAgent = navigator.userAgent.toLowerCase()
@@ -20,7 +20,7 @@ class AssetLoader {
   }
 
   constructor (scene, slots) {
-    this.worker = new WebWorker(Worker)
+    this.worker = new MyWorker()
     this.waitingQueue = []
     this.runningQueue = []
     Messenger.publish('send_scene', {

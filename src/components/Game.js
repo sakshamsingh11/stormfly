@@ -51,6 +51,10 @@ class Game {
     self.update(engine)
   }
 
+  static getScene () {
+    return this.scene
+  }
+
   initializeScene () {
     // const gravityVector = new Vector3(0, -9.81, 0)
     // this.scene.enablePhysics(gravityVector)

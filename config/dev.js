@@ -43,6 +43,14 @@ const config = {
         test: /\.css$/,
         include: sourceDirectory,
         use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.Worker\.js$/,
+        include: sourceDirectory,
+        use: {
+          loader: 'worker-loader',
+          options: { name: 'Worker.js' }
+        }
       }
     ]
   },
