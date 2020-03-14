@@ -1,3 +1,5 @@
 import Game from 'components/Game'
+import Worker from './Worker.js'
 
-Game.initialize()
+const worker = new Worker()
+Game.initialize(worker)

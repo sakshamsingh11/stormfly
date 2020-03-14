@@ -24,7 +24,7 @@ import 'stylesheets/main.css'
 // window.CANNON = CANNON
 
 class Game {
-  static initialize () {
+  static initialize (worker) {
     const canvas = document.getElementById('canvas')
     canvas.focus()
     const engine = new Engine(canvas)
@@ -49,10 +49,12 @@ class Game {
     }, 5000)
     self.subscribeToMessages()
     self.update(engine)
-  }
 
-  static getScene () {
-    return this.scene
+    console.log('here', worker)
+    worker.postMessage('load')
+    worker.addEventListener('message', (e) => {
+      console.log(e)
+    })
   }
 
   initializeScene () {
@@ -160,6 +162,10 @@ class Game {
       SceneAssets.update()
     })
   }
+}
+
+export const getScene = () => {
+  return this.scene
 }
 
 export default Game

@@ -45,11 +45,11 @@ const config = {
         use: ['style-loader', 'css-loader']
       },
       {
-        test: /\.Worker\.js$/,
+        test: /Worker.js$/,
         include: sourceDirectory,
         use: {
           loader: 'worker-loader',
-          options: { name: 'Worker.js' }
+          options: { inline: true }
         }
       }
     ]
